@@ -1,0 +1,45 @@
+name: Python Checks and Security
+
+on:
+  push:
+    [cite_start]branches: [ "main" ]                # Trigger on push [cite: 33]
+  schedule:
+    - [cite_start]cron: '0 0 * * 1'                 # Trigger weekly (Scheduled) [cite: 34]
+  [cite_start]workflow_dispatch:                    # Trigger manually via website
+
+jobs:
+  build-and-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4         # Get your code
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install ruff bandit pip-audit
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Syntax Check (Compile)
+      run: python -m compileall .       # Basic syntax check [cite: 19, 20]
+
+    - name: Linting with Ruff
+      run: ruff check .                 # Linting check [cite: 22]
+
+    - name: Security Check (Bandit)
+      [cite_start]run: bandit -r app                # Scan source code for security issues [cite: 23, 24]
+
+    - name: Dependency Audit
+      [cite_start]run: pip-audit -r requirements.txt -f json -o audit.json # Check for vulnerabilities
+      continue-on-error: true           # Allow it to fail so we can see the artifact
+
+    - name: Upload Audit Report
+      [cite_start]uses: actions/upload-artifact@v4  # Save the report for viewing [cite: 25]
+      with:
+        name: security-audit-report
+        path: audit.json

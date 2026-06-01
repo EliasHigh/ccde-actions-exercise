@@ -1,45 +1,59 @@
-name: Python Checks and Security
+name: GitHub Actions Exercise 11
 
 on:
   push:
     [cite_start]branches: [ "main" ]                # Trigger on push [cite: 33]
   schedule:
-    - [cite_start]cron: '0 0 * * 1'                 # Trigger weekly (Scheduled) [cite: 34]
-  [cite_start]workflow_dispatch:                    # Trigger manually via website
+    - [cite_start]cron: '0 0 * * 1'                 # Scheduled: Every Monday at 00:00 [cite: 34]
+  [cite_start]workflow_dispatch:                    # Manual trigger via GitHub website [cite: 35]
 
 jobs:
-  build-and-check:
+  quality-assurance:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4         # Get your code
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install ruff bandit pip-audit
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Install Dependencies and Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff bandit pip-audit
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Syntax Check (Compile)
-      run: python -m compileall .       # Basic syntax check [cite: 19, 20]
+      - name: Syntax Check (Compile)
+        # Note: The PDF says 'python-m', but it must be 'python -m' with a space
+        run: python -m compileall .
 
-    - name: Linting with Ruff
-      run: ruff check .                 # Linting check [cite: 22]
+      - name: Automated Tests
+        # Placeholder for your tests from the last exercise [cite: 21]
+        run: echo "Running automated tests..."
 
-    - name: Security Check (Bandit)
-      [cite_start]run: bandit -r app                # Scan source code for security issues [cite: 23, 24]
+      - name: Linting (Ruff)
+        [cite_start]run: ruff check . [cite: 22]
 
-    - name: Dependency Audit
-      [cite_start]run: pip-audit -r requirements.txt -f json -o audit.json # Check for vulnerabilities
-      continue-on-error: true           # Allow it to fail so we can see the artifact
+      - name: Security Check (Bandit)
+        # Assumes your code is in a folder named 'app' [cite: 24]
+        [cite_start]run: bandit -r app [cite: 23]
 
-    - name: Upload Audit Report
-      [cite_start]uses: actions/upload-artifact@v4  # Save the report for viewing [cite: 25]
-      with:
-        name: security-audit-report
-        path: audit.json
+      - name: Vulnerability Audit (pip-audit)
+        # Generates a JSON report as requested [cite: 26]
+        run: pip-audit -r requirements.txt -f json -o audit.json
+        continue-on-error: true # So the pipeline continues even if vulnerabilities exist
+
+      - name: Upload Audit Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit-report
+          path: audit.json
+
+      # EXTRA: Marketplace Action for Markdown Linting [cite: 14, 28]
+      - name: Marketplace Action - Lint Markdown
+        uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: "**/*.md"

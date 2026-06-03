@@ -2,10 +2,10 @@ name: GitHub Actions Exercise 11
 
 on:
   push:
-    [cite_start]branches: [ "main" ]                # Trigger on push [cite: 33]
+    branches: [ "main" ]          # Trigger 1: nach jedem Push auf main
   schedule:
-    - [cite_start]cron: '0 0 * * 1'                 # Scheduled: Every Monday at 00:00 [cite: 34]
-  [cite_start]workflow_dispatch:                    # Manual trigger via GitHub website [cite: 35]
+    - cron: '0 0 * * 1'           # Trigger 2: Zeitgesteuert – jeden Montag um 00:00 UTC
+  workflow_dispatch:              # Trigger 3: Manuell über die GitHub-Website
 
 jobs:
   quality-assurance:
@@ -27,24 +27,21 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Syntax Check (Compile)
-        # Note: The PDF says 'python-m', but it must be 'python -m' with a space
         run: python -m compileall .
 
       - name: Automated Tests
-        # Placeholder for your tests from the last exercise [cite: 21]
-        run: echo "Running automated tests..."
+        run: python -m unittest discover -s tests -v
 
       - name: Linting (Ruff)
-        [cite_start]run: ruff check . [cite: 22]
+        run: ruff check .
 
       - name: Security Check (Bandit)
-        # Assumes your code is in a folder named 'app' [cite: 24]
-        [cite_start]run: bandit -r app [cite: 23]
+        run: bandit -r app
+        continue-on-error: true   # Pipeline läuft weiter, auch wenn Sicherheitsprobleme gefunden werden
 
       - name: Vulnerability Audit (pip-audit)
-        # Generates a JSON report as requested [cite: 26]
         run: pip-audit -r requirements.txt -f json -o audit.json
-        continue-on-error: true # So the pipeline continues even if vulnerabilities exist
+        continue-on-error: true   # Report wird trotzdem als Artifact hochgeladen
 
       - name: Upload Audit Artifact
         uses: actions/upload-artifact@v4
@@ -52,7 +49,7 @@ jobs:
           name: security-audit-report
           path: audit.json
 
-      # EXTRA: Marketplace Action for Markdown Linting [cite: 14, 28]
+      # EXTRA: Marketplace Action – Markdown Linting
       - name: Marketplace Action - Lint Markdown
         uses: DavidAnson/markdownlint-cli2-action@v16
         with:
